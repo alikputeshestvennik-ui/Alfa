@@ -47,6 +47,14 @@ jobs:
             rm -rf BlackboxOffline_WHISPER_COMPACT
           fi
 
+          # Normalize timestamps: files unpacked from ZIP may carry mtimes in the
+          # future relative to the runner clock, which makes ninja loop forever with
+          # "manifest 'build.ninja' still dirty after 100 tries".
+          find . -type f -exec touch {} +
+
+          # Drop any stale native build state
+          rm -rf app/.cxx wear/.cxx
+
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           echo "ndk.dir=$ANDROID_HOME/ndk/25.2.9519653" >> local.properties
           touch gradle.properties
@@ -55,7 +63,7 @@ jobs:
 
       - name: Build Both Modules (:app and :wear)
         run: |
-          gradle :app:assembleRelease :wear:assembleRelease --no-daemon
+          gradle :app:assembleRelease :wear:assembleRelease --no-daemon --stacktrace
 
       - name: Sign Both APKs with Shared Keystore
         run: |
